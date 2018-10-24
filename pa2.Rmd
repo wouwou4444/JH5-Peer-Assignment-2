@@ -1,0 +1,109 @@
+---
+title: "Analysis of severe weather conditions on population health and economic development"
+output: html_document
+---
+
+## Introduction
+
+The purpose of this analysis is to study the correlation between different weather events in USA and the population health and economic development. This will help municipalities in the impacted regions to take the appropriate set of actions to reduce the impact of such future events.
+
+OUr data source was collected by the NOAA organization from the year 1950 and end in November 2011.
+
+We will be using these data to answer to the 2 following questions:
+
+1. which type of events are most harmful to the population health
+1. which type of events have the greatest economic consequences
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(lubridate)
+library(tidyverse)
+```
+
+## Data Processing
+
+### Load and explore data from NOAA
+
+The data is loaded from a bz2 file dump copy of the original data. 
+
+```{r load_storm_data, cache=TRUE}
+storm_data <- read.csv("./repdata-StormData.csv.bz2", stringsAsFactors = FALSE)
+
+summary(storm_data)
+
+```
+
+
+### Date Transformation
+
+The damage and casualties caused by weather events will be consolidated on **one-year** period.
+
+This will put in light weather events having the greatest impact over the whole period and more recently.
+
+```{r date_transformation,cache=TRUE}
+storm_data$year <- strsplit(storm_data$BGN_DATE," ")
+storm_data$year <- sapply(storm_data$year, "[",1)
+storm_data$year <- as.Date(storm_data$year, format = "%m/%d/%Y")
+storm_data$year <- lubridate::year(storm_data$year)
+
+
+
+
+```
+
+### Fatalities and Injuries computation
+```{r fatalities_transformation}
+df_weather_impact <- NULL
+df_weather_impact$population_impact_year <- storm_data %>%
+  group_by(year, EVTYPE) %>%
+  summarize(total_fatalities = sum(FATALITIES))
+
+summary(df_weather_impact$population_impact_year)
+
+df_weather_impact$population_impact <- storm_data %>%
+  group_by(EVTYPE) %>%
+  summarize(total_fatalities = sum(FATALITIES))
+
+summary(df_weather_impact$population_impact)
+
+top20_evtype_fatalities <- df_weather_impact$population_impact[order(df_weather_impact$population_impact$total_fatalities, decreasing = TRUE)[1:20],]
+
+
+```
+
+
+### Property Damage Computation
+```{r fatalities_chart}
+p <- ggplot(df_weather_impact$population_impact_year[df_weather_impact$population_impact_year$total_fatalities > 12,], aes(year, colour = EVTYPE)) +
+  theme_minimal() +
+  theme(axis.ticks.x = element_line(colour = "blue", size = 2)) +
+  theme(panel.grid.major.x = element_line(size = 1) ) +
+  theme(legend.text = element_text(size = 6)) +
+  theme(legend.position = "bottom") +
+  geom_line(aes(y=total_fatalities)) +
+  scale_x_continuous(breaks = seq(1950, 2015, 5)) +
+  geom_point(aes(y=total_fatalities), size = 2)
+p
+
+
+```
+
+### Property Damage Computation
+```{r prop_damage_transformation}
+table(storm_data$PROPDMGEXP)
+
+```
+
+
+### Crop Damage Computation
+```{r crop_damage_transformation}
+table(storm_data$CROPDMGEXP)
+
+```
+
+
+
+
+## Results
