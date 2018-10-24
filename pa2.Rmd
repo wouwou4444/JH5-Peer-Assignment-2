@@ -1,6 +1,8 @@
 ---
 title: "Analysis of severe weather conditions on population health and economic development"
-output: html_document
+output: 
+  html_document:
+    keep_md: true
 ---
 
 ## Introduction
@@ -69,6 +71,8 @@ df_weather_impact$population_impact <- storm_data %>%
 summary(df_weather_impact$population_impact)
 
 top20_evtype_fatalities <- df_weather_impact$population_impact[order(df_weather_impact$population_impact$total_fatalities, decreasing = TRUE)[1:20],]
+
+print(top20_evtype_fatalities)
 
 
 ```
